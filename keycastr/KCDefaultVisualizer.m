@@ -35,6 +35,7 @@
 #import "KCMouseEvent.h"
 #import "NSBezierPath+RoundedRect.h"
 #import "NSUserDefaults+Utility.h"
+#import "KCEventTransformer.h"
 
 
 // TODO: seems this should be based on the font height, or shouldn't be needed at all
@@ -64,7 +65,36 @@ static const CGFloat kKCDefaultBezelPadding = 10.0;
 
 @implementation KCDefaultVisualizerPreferencesView
 
-@synthesize commandKeysOnlyButton, allModifiedKeysButton, allKeysButton;
+@synthesize commandKeysOnlyButton, allModifiedKeysButton, allKeysButton, showDualNotationCheckbox;
+
+- (void)awakeFromNib
+{
+    [super awakeFromNib];
+
+    // Create the dual notation checkbox programmatically
+    _showDualNotationCheckbox = [[NSButton alloc] initWithFrame:NSMakeRect(20, 20, 300, 25)];
+    [_showDualNotationCheckbox setButtonType:NSButtonTypeSwitch];
+    [_showDualNotationCheckbox setTitle:@"Show dual notation (macOS + Windows)"];
+    [_showDualNotationCheckbox setTarget:self];
+    [_showDualNotationCheckbox setAction:@selector(showDualNotationChanged:)];
+
+    // Bind to UserDefaults
+    [_showDualNotationCheckbox bind:NSValueBinding
+                           toObject:[NSUserDefaultsController sharedUserDefaultsController]
+                        withKeyPath:@"values.default.showDualNotation"
+                            options:nil];
+
+    [self addSubview:_showDualNotationCheckbox];
+
+    // Adjust autoresizing mask to keep it at the bottom
+    [_showDualNotationCheckbox setAutoresizingMask:NSViewMaxYMargin | NSViewMaxXMargin];
+}
+
+- (void)showDualNotationChanged:(id)sender
+{
+    // The binding automatically updates UserDefaults
+    // This method can be used for additional actions if needed
+}
 
 @end
 
@@ -193,6 +223,7 @@ static const CGFloat kKCDefaultBezelPadding = 10.0;
                                                           requiringSecureCoding:NO
                                                                           error:NULL],
               @"default_displayModifiedCharacters": @NO,
+              @"default.showDualNotation": @NO,
     };
 }
 
@@ -316,7 +347,20 @@ static NSRect KC_defaultFrame(void) {
         [self abandonCurrentBezelView];
     }
 
-    [self appendString:[keystroke convertToString]];
+    BOOL showDualNotation = [[NSUserDefaults standardUserDefaults] boolForKey:@"default.showDualNotation"];
+
+    if (showDualNotation) {
+        // Generate both macOS and Windows notations
+        NSString *macOSNotation = [keystroke convertToString];
+        KCEventTransformer *transformer = [KCEventTransformer currentTransformer];
+        NSString *windowsNotation = [transformer transformedValueToWindowsNotation:keystroke];
+
+        // Combine both notations with a separator
+        NSString *dualNotation = [NSString stringWithFormat:@"%@  │  %@", macOSNotation, windowsNotation];
+        [self appendString:dualNotation];
+    } else {
+        [self appendString:[keystroke convertToString]];
+    }
 }
 
 - (void)appendString:(NSString *)string

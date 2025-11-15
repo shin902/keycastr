@@ -342,4 +342,159 @@ static NSString* kLeftTabString = @"\xe2\x87\xa4";
     return [NSString stringWithCharacters:unicodeString length:length];
 }
 
+#pragma mark - Windows Notation Conversion
+
+- (NSDictionary *)_windowsSpecialKeys
+{
+    static NSDictionary *d = nil;
+    if (d == nil) {
+        d = [[NSDictionary alloc] initWithObjectsAndKeys:
+             @"Up", @126,        // up
+             @"Down", @125,      // down
+             @"Right", @124,     // right
+             @"Left", @123,      // left
+             @"Tab", @48,        // tab
+             @"Esc", @53,        // escape
+             @"Clear", @71,      // clear
+             @"Backspace", @51,  // delete
+             @"Delete", @117,    // forward delete
+             @"Help", @114,      // help
+             @"Home", @115,      // home
+             @"End", @119,       // end
+             @"PgUp", @116,      // pgup
+             @"PgDn", @121,      // pgdn
+             @"Enter", @36,      // return
+             @"Enter", @76,      // numpad enter
+             @"Space", @49,      // space
+             @"F1", @122,        // F1
+             @"F2", @120,        // F2
+             @"F3", @99,         // F3
+             @"F4", @118,        // F4
+             @"F5", @96,         // F5
+             @"F6", @97,         // F6
+             @"F7", @98,         // F7
+             @"F8", @100,        // F8
+             @"F9", @101,        // F9
+             @"F10", @109,       // F10
+             @"F11", @103,       // F11
+             @"F12", @111,       // F12
+             @"F13", @105,       // F13
+             @"F14", @107,       // F14
+             @"F15", @113,       // F15
+             @"F16", @106,       // F16
+             @"F17", @64,        // F17
+             @"F18", @79,        // F18
+             @"F19", @80,        // F19
+             @"F20", @90,        // F20
+             nil];
+    }
+    return d;
+}
+
+- (NSString *)transformedValueToWindowsNotation:(KCKeycastrEvent *)event
+{
+    NSEventModifierFlags _modifiers = event.modifierFlags;
+    BOOL hasControlModifier = (_modifiers & NSEventModifierFlagControl) != 0;
+    BOOL hasOptionModifier = (_modifiers & NSEventModifierFlagOption) != 0;
+    BOOL hasShiftModifier = (_modifiers & NSEventModifierFlagShift) != 0;
+    BOOL hasCommandModifier = (_modifiers & NSEventModifierFlagCommand) != 0;
+    BOOL isCommand = hasControlModifier || hasCommandModifier;
+
+    BOOL needsShiftGlyph = NO;
+
+    NSMutableArray *modifierParts = [NSMutableArray array];
+
+    // Windows modifier order: Ctrl + Alt + Shift
+    // Map macOS Control or Command to Ctrl
+    if (hasControlModifier || hasCommandModifier) {
+        [modifierParts addObject:@"Ctrl"];
+    }
+
+    if (hasOptionModifier && (isCommand || !_displayModifiedCharacters)) {
+        [modifierParts addObject:@"Alt"];
+    }
+
+    if (hasShiftModifier) {
+        if (isCommand) {
+            [modifierParts addObject:@"Shift"];
+        } else if (hasOptionModifier && !_displayModifiedCharacters) {
+            [modifierParts addObject:@"Shift"];
+        } else {
+            needsShiftGlyph = !_displayModifiedCharacters;
+        }
+    }
+
+    if ([event isKindOfClass:[KCMouseEvent class]]) {
+        if (needsShiftGlyph) {
+            [modifierParts addObject:@"Shift"];
+        }
+        [modifierParts addObject:@"Click"];
+        return [modifierParts componentsJoinedByString:@"+"];
+    }
+
+    KCKeystroke *keystroke = (KCKeystroke *)event;
+
+    // check for bare shift-tab as left tab special case
+    if (hasShiftModifier && !keystroke.isCommand && !hasOptionModifier) {
+        if (keystroke.keyCode == 48) {
+            return @"Shift+Tab";
+        }
+    }
+
+    if (needsShiftGlyph) {
+        [modifierParts addObject:@"Shift"];
+        needsShiftGlyph = NO;
+    }
+
+    NSString *keyPart = nil;
+
+    // Check for special keys first
+    NSString *specialKeyString = [[self _windowsSpecialKeys] objectForKey:@(keystroke.keyCode)];
+    if (specialKeyString) {
+        if (_displayModifiedCharacters && !keystroke.isCommand) {
+            if (hasOptionModifier) {
+                if (![modifierParts containsObject:@"Alt"]) {
+                    [modifierParts addObject:@"Alt"];
+                }
+            }
+            if (hasShiftModifier) {
+                if (![modifierParts containsObject:@"Shift"]) {
+                    [modifierParts addObject:@"Shift"];
+                }
+            }
+        }
+        keyPart = specialKeyString;
+    } else {
+        // Regular character key
+        if (_displayModifiedCharacters && !isCommand) {
+            if (keystroke.characters.length > 0) {
+                keyPart = keystroke.characters;
+            } else {
+                if (hasOptionModifier && ![modifierParts containsObject:@"Alt"]) {
+                    [modifierParts addObject:@"Alt"];
+                }
+                if (hasShiftModifier && ![modifierParts containsObject:@"Shift"]) {
+                    [modifierParts addObject:@"Shift"];
+                }
+                keyPart = [self translatedCharacterForKeystroke:keystroke];
+            }
+        } else {
+            keyPart = [self translatedCharacterForKeystroke:keystroke];
+        }
+
+        // Commands, shifted keystrokes, and option combinations should be uppercased
+        if (isCommand || hasShiftModifier || (hasOptionModifier && !_displayModifiedCharacters)) {
+            if (keystroke.keyCode != 27) {
+                keyPart = [keyPart uppercaseString];
+            }
+        }
+    }
+
+    if (keyPart.length > 0) {
+        [modifierParts addObject:keyPart];
+    }
+
+    return [modifierParts componentsJoinedByString:@"+"];
+}
+
 @end
