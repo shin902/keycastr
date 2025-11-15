@@ -281,4 +281,48 @@
     XCTAssertEqualObjects([keystroke convertToString], @"⌘ß");
 }
 
+#pragma mark - Windows Notation Conversion
+
+- (void)test_windowsNotation_convertsCmdCToCtrlC {
+    // cmd-C should convert to Ctrl+C in Windows notation
+    keystroke = [self keystrokeWithKeyCode:8 modifiers:1048840 characters:@"c" charactersIgnoringModifiers:@"c"];
+    XCTAssertEqualObjects([eventTransformer transformedValueToWindowsNotation:keystroke], @"Ctrl+C");
+}
+
+- (void)test_windowsNotation_convertsCmdShiftPToCtrlShiftP {
+    // cmd-shift-P should convert to Ctrl+Shift+P in Windows notation
+    keystroke = [self keystrokeWithKeyCode:35 modifiers:1179914 characters:@"P" charactersIgnoringModifiers:@"p"];
+    XCTAssertEqualObjects([eventTransformer transformedValueToWindowsNotation:keystroke], @"Ctrl+Shift+P");
+}
+
+- (void)test_windowsNotation_convertsOptAToAltA {
+    // opt-A should convert to Alt+A in Windows notation
+    keystroke = [self keystrokeWithKeyCode:0 modifiers:524576 characters:@"å" charactersIgnoringModifiers:@"a"];
+    XCTAssertEqualObjects([eventTransformer transformedValueToWindowsNotation:keystroke], @"Alt+A");
+}
+
+- (void)test_windowsNotation_convertsCmdOptIToCtrlAltI {
+    // cmd-opt-I should convert to Ctrl+Alt+I in Windows notation
+    keystroke = [self keystrokeWithKeyCode:34 modifiers:1573160 characters:@"ˆ" charactersIgnoringModifiers:@"i"];
+    XCTAssertEqualObjects([eventTransformer transformedValueToWindowsNotation:keystroke], @"Ctrl+Alt+I");
+}
+
+- (void)test_windowsNotation_convertsArrowKeys {
+    // Up arrow should convert to Up in Windows notation
+    keystroke = [self keystrokeWithKeyCode:126 modifiers:0 characters:@"" charactersIgnoringModifiers:@""];
+    XCTAssertEqualObjects([eventTransformer transformedValueToWindowsNotation:keystroke], @"Up");
+}
+
+- (void)test_windowsNotation_convertsFunctionKeys {
+    // F1 should remain F1 in Windows notation
+    keystroke = [self keystrokeWithKeyCode:122 modifiers:8388864 characters:@"" charactersIgnoringModifiers:@""];
+    XCTAssertEqualObjects([eventTransformer transformedValueToWindowsNotation:keystroke], @"F1");
+}
+
+- (void)test_windowsNotation_convertsShiftTab {
+    // shift-tab should convert to Shift+Tab in Windows notation
+    keystroke = [self keystrokeWithKeyCode:48 modifiers:131330 characters:[NSString stringWithFormat:@"%C", 0x00000019] charactersIgnoringModifiers:[NSString stringWithFormat:@"%C", 0x00000019]];
+    XCTAssertEqualObjects([eventTransformer transformedValueToWindowsNotation:keystroke], @"Shift+Tab");
+}
+
 @end

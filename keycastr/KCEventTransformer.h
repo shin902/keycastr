@@ -40,5 +40,6 @@
 + (instancetype)new NS_UNAVAILABLE;
 
 - (id)transformedValue:(KCKeycastrEvent *)event;
+- (NSString *)transformedValueToWindowsNotation:(KCKeycastrEvent *)event;
 
 @end

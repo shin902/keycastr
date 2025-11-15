@@ -96,6 +96,7 @@ typedef NS_ENUM(NSInteger, KCDefaultVisualizerDisplayOption) {
 @property (nonatomic, assign) IBOutlet NSButton *commandKeysOnlyButton;
 @property (nonatomic, assign) IBOutlet NSButton *allModifiedKeysButton;
 @property (nonatomic, assign) IBOutlet NSButton *allKeysButton;
+@property (nonatomic, strong) NSButton *showDualNotationCheckbox;
 
 @end
 
