@@ -74,7 +74,8 @@ static const CGFloat kKCDefaultBezelPadding = 10.0;
     // Create the dual notation checkbox programmatically
     _showDualNotationCheckbox = [[NSButton alloc] initWithFrame:NSMakeRect(20, 20, 300, 25)];
     [_showDualNotationCheckbox setButtonType:NSButtonTypeSwitch];
-    [_showDualNotationCheckbox setTitle:@"Show dual notation (macOS + Windows)"];
+    [_showDualNotationCheckbox setTitle:NSLocalizedString(@"Show dual notation (macOS + Windows)",
+                                                          @"Checkbox label for enabling dual platform notation display")];
     [_showDualNotationCheckbox setTarget:self];
     [_showDualNotationCheckbox setAction:@selector(showDualNotationChanged:)];
 

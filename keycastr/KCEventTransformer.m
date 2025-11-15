@@ -62,6 +62,12 @@ static NSString* kControlKeyString = @"\xe2\x8c\x83";
 static NSString* kShiftKeyString = @"\xe2\x87\xa7";
 static NSString* kLeftTabString = @"\xe2\x87\xa4";
 
+// Key codes for special handling
+static const uint16_t kKeyCodeMinus = 27;
+static const uint16_t kKeyCodeReturn = 36;
+static const uint16_t kKeyCodeNumpadEnter = 76;
+static const uint16_t kKeyCodeTab = 48;
+
 #define UTF8(x) [NSString stringWithUTF8String:x]
 
 @synthesize keyboardLayout = _keyboardLayout;
@@ -269,7 +275,7 @@ static NSString* kLeftTabString = @"\xe2\x87\xa4";
     // check for bare shift-tab as left tab special case
     if (hasShiftModifier && !keystroke.isCommand && !hasOptionModifier)
     {
-        if (keystroke.keyCode == 48) {
+        if (keystroke.keyCode == kKeyCodeTab) {
             [mutableResponse appendString:kLeftTabString];
             return mutableResponse;
         }
@@ -313,8 +319,8 @@ static NSString* kLeftTabString = @"\xe2\x87\xa4";
     // Commands, shifted keystrokes, and option combinations (when displayModifiedCharacters is NO) should be uppercased
     if (isCommand || hasShiftModifier || (hasOptionModifier && !_displayModifiedCharacters))
     {
-        // Unless it is a special case - do not shift keycode 27
-        if (keystroke.keyCode != 27) {
+        // Special case: Don't uppercase the minus key (German ß key)
+        if (keystroke.keyCode != kKeyCodeMinus) {
             mutableResponse = [[mutableResponse uppercaseString] mutableCopy];
         }
 	}
@@ -346,53 +352,58 @@ static NSString* kLeftTabString = @"\xe2\x87\xa4";
 
 - (NSDictionary *)_windowsSpecialKeys
 {
-    static NSDictionary *d = nil;
-    if (d == nil) {
-        d = [[NSDictionary alloc] initWithObjectsAndKeys:
-             @"Up", @126,        // up
-             @"Down", @125,      // down
-             @"Right", @124,     // right
-             @"Left", @123,      // left
-             @"Tab", @48,        // tab
-             @"Esc", @53,        // escape
-             @"Clear", @71,      // clear
-             @"Backspace", @51,  // delete
-             @"Delete", @117,    // forward delete
-             @"Help", @114,      // help
-             @"Home", @115,      // home
-             @"End", @119,       // end
-             @"PgUp", @116,      // pgup
-             @"PgDn", @121,      // pgdn
-             @"Enter", @36,      // return
-             @"Enter", @76,      // numpad enter
-             @"Space", @49,      // space
-             @"F1", @122,        // F1
-             @"F2", @120,        // F2
-             @"F3", @99,         // F3
-             @"F4", @118,        // F4
-             @"F5", @96,         // F5
-             @"F6", @97,         // F6
-             @"F7", @98,         // F7
-             @"F8", @100,        // F8
-             @"F9", @101,        // F9
-             @"F10", @109,       // F10
-             @"F11", @103,       // F11
-             @"F12", @111,       // F12
-             @"F13", @105,       // F13
-             @"F14", @107,       // F14
-             @"F15", @113,       // F15
-             @"F16", @106,       // F16
-             @"F17", @64,        // F17
-             @"F18", @79,        // F18
-             @"F19", @80,        // F19
-             @"F20", @90,        // F20
-             nil];
-    }
-    return d;
+    static NSDictionary *specialKeys = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        specialKeys = @{
+            @126: @"Up",           // up arrow
+            @125: @"Down",         // down arrow
+            @124: @"Right",        // right arrow
+            @123: @"Left",         // left arrow
+            @kKeyCodeTab: @"Tab",  // tab
+            @53: @"Esc",           // escape
+            @71: @"Clear",         // clear
+            @51: @"Backspace",     // delete
+            @117: @"Delete",       // forward delete
+            @114: @"Help",         // help
+            @115: @"Home",         // home
+            @119: @"End",          // end
+            @116: @"PgUp",         // page up
+            @121: @"PgDn",         // page down
+            @kKeyCodeReturn: @"Enter",       // return
+            @kKeyCodeNumpadEnter: @"Enter",  // numpad enter
+            @49: @"Space",         // space
+            @122: @"F1",           // F1
+            @120: @"F2",           // F2
+            @99: @"F3",            // F3
+            @118: @"F4",           // F4
+            @96: @"F5",            // F5
+            @97: @"F6",            // F6
+            @98: @"F7",            // F7
+            @100: @"F8",           // F8
+            @101: @"F9",           // F9
+            @109: @"F10",          // F10
+            @103: @"F11",          // F11
+            @111: @"F12",          // F12
+            @105: @"F13",          // F13
+            @107: @"F14",          // F14
+            @113: @"F15",          // F15
+            @106: @"F16",          // F16
+            @64: @"F17",           // F17
+            @79: @"F18",           // F18
+            @80: @"F19",           // F19
+            @90: @"F20",           // F20
+        };
+    });
+    return specialKeys;
 }
 
 - (NSString *)transformedValueToWindowsNotation:(KCKeycastrEvent *)event
 {
+    if (!event) {
+        return @"";
+    }
+
     NSEventModifierFlags _modifiers = event.modifierFlags;
     BOOL hasControlModifier = (_modifiers & NSEventModifierFlagControl) != 0;
     BOOL hasOptionModifier = (_modifiers & NSEventModifierFlagOption) != 0;
@@ -436,7 +447,7 @@ static NSString* kLeftTabString = @"\xe2\x87\xa4";
 
     // check for bare shift-tab as left tab special case
     if (hasShiftModifier && !keystroke.isCommand && !hasOptionModifier) {
-        if (keystroke.keyCode == 48) {
+        if (keystroke.keyCode == kKeyCodeTab) {
             return @"Shift+Tab";
         }
     }
@@ -484,7 +495,8 @@ static NSString* kLeftTabString = @"\xe2\x87\xa4";
 
         // Commands, shifted keystrokes, and option combinations should be uppercased
         if (isCommand || hasShiftModifier || (hasOptionModifier && !_displayModifiedCharacters)) {
-            if (keystroke.keyCode != 27) {
+            // Special case: Don't uppercase the minus key (German ß key)
+            if (keystroke.keyCode != kKeyCodeMinus) {
                 keyPart = [keyPart uppercaseString];
             }
         }
