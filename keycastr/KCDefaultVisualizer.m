@@ -41,6 +41,8 @@
 // TODO: seems this should be based on the font height, or shouldn't be needed at all
 static const CGFloat kKCDefaultBezelHeight = 32.0;
 static const CGFloat kKCDefaultBezelPadding = 10.0;
+static const CGFloat kKCBezelVerticalSpacing = 10.0;
+static NSString* const kDualNotationSeparator = @"  │  ";
 
 
 @implementation KCDefaultVisualizerFactory
@@ -283,6 +285,7 @@ static NSRect KC_defaultFrame(void) {
 @implementation KCDefaultVisualizerWindow {
 	BOOL _shouldResize;
 	BOOL _dragging;
+	BOOL _showDualNotation;
 }
 
 - (instancetype)init
@@ -297,13 +300,20 @@ static NSRect KC_defaultFrame(void) {
 {
     if (!(self = [super initWithContentRect:contentRect styleMask:styleMask backing:backing defer:defer]))
         return nil;
-    
+
     _runningAnimations = [[NSMutableArray alloc] init];
+
+    // Initialize dual notation flag and observe changes
+    _showDualNotation = [[NSUserDefaults standardUserDefaults] boolForKey:@"default.showDualNotation"];
+    [[NSUserDefaults standardUserDefaults] addObserver:self
+                                            forKeyPath:@"default.showDualNotation"
+                                               options:NSKeyValueObservingOptionNew
+                                               context:NULL];
 
     [self setFrameUsingName:@"KCBezelWindow default.bezelWindow" force:YES];
     [self setFrameAutosaveName:@"KCBezelWindow default.bezelWindow"];
     [self resizePreservingHeight:NO];
-    
+
     CGFloat padding = 10;
     NSRect boundingRect = NSInsetRect([NSScreen mainScreen].frame, padding, padding);
     if (!NSPointInRect(self.frame.origin, boundingRect)) {
@@ -311,7 +321,7 @@ static NSRect KC_defaultFrame(void) {
 
         [self resetFrame];
     }
-    
+
     [self setLevel:NSScreenSaverWindowLevel];
     [self setOpaque:NO];
 
@@ -326,6 +336,22 @@ static NSRect KC_defaultFrame(void) {
                                                  name:NSApplicationWillTerminateNotification
                                                object:nil];
     return self;
+}
+
+- (void)dealloc
+{
+    [[NSUserDefaults standardUserDefaults] removeObserver:self forKeyPath:@"default.showDualNotation"];
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context
+{
+    if ([keyPath isEqualToString:@"default.showDualNotation"]) {
+        id newValue = change[NSKeyValueChangeNewKey];
+        if ([newValue respondsToSelector:@selector(boolValue)]) {
+            _showDualNotation = [newValue boolValue];
+        }
+    }
 }
 
 - (void)applicationWillTerminate:(NSNotification *)notification {
@@ -393,16 +419,14 @@ static NSRect KC_defaultFrame(void) {
         [self abandonCurrentBezelView];
     }
 
-    BOOL showDualNotation = [[NSUserDefaults standardUserDefaults] boolForKey:@"default.showDualNotation"];
-
-    if (showDualNotation) {
+    if (_showDualNotation) {
         // Generate both macOS and Windows notations
         NSString *macOSNotation = [keystroke convertToString];
         KCEventTransformer *transformer = [KCEventTransformer currentTransformer];
         NSString *windowsNotation = [transformer transformedValueToWindowsNotation:keystroke];
 
         // Combine both notations with a separator
-        NSString *dualNotation = [NSString stringWithFormat:@"%@  │  %@", macOSNotation, windowsNotation];
+        NSString *dualNotation = [NSString stringWithFormat:@"%@%@%@", macOSNotation, kDualNotationSeparator, windowsNotation];
         [self appendString:dualNotation];
     } else {
         [self appendString:[keystroke convertToString]];
@@ -425,7 +449,7 @@ static NSRect KC_defaultFrame(void) {
 		[_currentBezelView setAutoresizingMask:NSViewMinYMargin];
 
         NSRect frame = self.frame;
-        frame.size.height += 10 + _currentBezelView.frame.size.height;
+        frame.size.height += kKCBezelVerticalSpacing + _currentBezelView.frame.size.height;
 		[self setFrame:frame display:YES animate:NO];
 
 		[[self contentView] addSubview:_currentBezelView];
@@ -543,7 +567,7 @@ static NSRect KC_defaultFrame(void) {
 
 -(void) animationDidEnd:(NSAnimation*)anim
 {
-	CGFloat deltaY = [_bezelView frame].size.height + 10;
+	CGFloat deltaY = [_bezelView frame].size.height + kKCBezelVerticalSpacing;
 	KCDefaultVisualizerWindow* w = (KCDefaultVisualizerWindow*)[_bezelView window];
 	[w removeRunningAnimation:self];
 	[_bezelView removeFromSuperview];

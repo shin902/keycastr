@@ -4,3 +4,5 @@ xcuserdata
 xcshareddata
 .idea
 keycastr/bin
+*.o
+keycastr/opal
