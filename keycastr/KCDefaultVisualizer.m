@@ -67,34 +67,79 @@ static const CGFloat kKCDefaultBezelPadding = 10.0;
 
 @synthesize commandKeysOnlyButton, allModifiedKeysButton, allKeysButton, showDualNotationCheckbox;
 
+// Layout constants for dual notation checkbox
+// WARNING: These constants must be kept in sync with the nib file layout
+// Based on nib file layout: separator box is at y=283
+static const CGFloat kSeparatorLineY = 283.0;
+static const CGFloat kCheckboxBelowSeparatorOffset = 20.0;
+static const CGFloat kDualNotationCheckboxXFallback = 161.0;  // Fallback if radio button not yet loaded
+static const CGFloat kDualNotationCheckboxWidth = 250.0;      // Sufficient for label
+static const CGFloat kDualNotationCheckboxHeight = 18.0;      // Standard checkbox height
+
 - (void)awakeFromNib
 {
     [super awakeFromNib];
+    [self setupDualNotationCheckbox];
+}
 
+#pragma mark - Dual Notation Checkbox Setup
+
+- (void)setupDualNotationCheckbox
+{
     // Create the dual notation checkbox programmatically
-    _showDualNotationCheckbox = [[NSButton alloc] initWithFrame:NSMakeRect(20, 20, 300, 25)];
+    // Note: This is created programmatically because updating the nib file requires Xcode/Interface Builder
+    _showDualNotationCheckbox = [[NSButton alloc] initWithFrame:[self dualNotationCheckboxFrame]];
+    [self configureDualNotationCheckbox];
+    [self bindDualNotationCheckbox];
+    [self addSubview:_showDualNotationCheckbox];
+    [self configureAutoresizingMask];
+}
+
+- (NSRect)dualNotationCheckboxFrame
+{
+    // Dynamically calculate X position based on existing radio buttons to maintain alignment
+    // Falls back to constant if radio buttons are not yet loaded
+    CGFloat xPosition = self.commandKeysOnlyButton ?
+        NSMinX(self.commandKeysOnlyButton.frame) : kDualNotationCheckboxXFallback;
+
+    CGFloat yPosition = kSeparatorLineY - kCheckboxBelowSeparatorOffset;
+
+    return NSMakeRect(xPosition,
+                      yPosition,
+                      kDualNotationCheckboxWidth,
+                      kDualNotationCheckboxHeight);
+}
+
+- (void)configureDualNotationCheckbox
+{
     [_showDualNotationCheckbox setButtonType:NSButtonTypeSwitch];
     [_showDualNotationCheckbox setTitle:NSLocalizedString(@"Show dual notation (macOS + Windows)",
                                                           @"Checkbox label for enabling dual platform notation display")];
-    [_showDualNotationCheckbox setTarget:self];
-    [_showDualNotationCheckbox setAction:@selector(showDualNotationChanged:)];
+}
 
-    // Bind to UserDefaults
+- (void)bindDualNotationCheckbox
+{
+    // Bind to UserDefaults - no action method needed as binding handles updates automatically
     [_showDualNotationCheckbox bind:NSValueBinding
                            toObject:[NSUserDefaultsController sharedUserDefaultsController]
                         withKeyPath:@"values.default.showDualNotation"
                             options:nil];
+}
 
-    [self addSubview:_showDualNotationCheckbox];
-
-    // Adjust autoresizing mask to keep it at the bottom
+- (void)configureAutoresizingMask
+{
+    // NSViewMaxXMargin: flexible space on the right side -> keeps checkbox aligned to left edge
+    // NSViewMaxYMargin: flexible space above -> keeps checkbox at bottom
+    // This matches the behavior of the radio buttons defined in the nib
     [_showDualNotationCheckbox setAutoresizingMask:NSViewMaxYMargin | NSViewMaxXMargin];
 }
 
-- (void)showDualNotationChanged:(id)sender
+- (void)dealloc
 {
-    // The binding automatically updates UserDefaults
-    // This method can be used for additional actions if needed
+    // Clean up binding to prevent memory leaks and unexpected behavior
+    if (_showDualNotationCheckbox) {
+        [_showDualNotationCheckbox unbind:NSValueBinding];
+    }
 }
 
 @end
