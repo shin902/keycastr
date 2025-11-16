@@ -68,13 +68,13 @@ static const CGFloat kKCDefaultBezelPadding = 10.0;
 @synthesize commandKeysOnlyButton, allModifiedKeysButton, allKeysButton, showDualNotationCheckbox;
 
 // Layout constants for dual notation checkbox
+// WARNING: These constants must be kept in sync with the nib file layout
 // Based on nib file layout: separator box is at y=283
 static const CGFloat kSeparatorLineY = 283.0;
 static const CGFloat kCheckboxBelowSeparatorOffset = 20.0;
-static const CGFloat kDualNotationCheckboxX = 161.0;      // Aligned with radio buttons
-static const CGFloat kDualNotationCheckboxY = kSeparatorLineY - kCheckboxBelowSeparatorOffset;
-static const CGFloat kDualNotationCheckboxWidth = 250.0;  // Sufficient for label
-static const CGFloat kDualNotationCheckboxHeight = 18.0;  // Standard checkbox height
+static const CGFloat kDualNotationCheckboxXFallback = 161.0;  // Fallback if radio button not yet loaded
+static const CGFloat kDualNotationCheckboxWidth = 250.0;      // Sufficient for label
+static const CGFloat kDualNotationCheckboxHeight = 18.0;      // Standard checkbox height
 
 - (void)awakeFromNib
 {
@@ -92,16 +92,20 @@ static const CGFloat kDualNotationCheckboxHeight = 18.0;  // Standard checkbox h
     [self configureDualNotationCheckbox];
     [self bindDualNotationCheckbox];
     [self addSubview:_showDualNotationCheckbox];
-
-    // Use NSViewMinXMargin (not NSViewMaxXMargin) to keep checkbox aligned to left edge
-    // when window is resized, matching the behavior of other radio buttons in the nib
-    [_showDualNotationCheckbox setAutoresizingMask:NSViewMaxYMargin | NSViewMinXMargin];
+    [self configureAutoresizingMask];
 }
 
 - (NSRect)dualNotationCheckboxFrame
 {
-    return NSMakeRect(kDualNotationCheckboxX,
-                      kDualNotationCheckboxY,
+    // Dynamically calculate X position based on existing radio buttons to maintain alignment
+    // Falls back to constant if radio buttons are not yet loaded
+    CGFloat xPosition = self.commandKeysOnlyButton ?
+        NSMinX(self.commandKeysOnlyButton.frame) : kDualNotationCheckboxXFallback;
+
+    CGFloat yPosition = kSeparatorLineY - kCheckboxBelowSeparatorOffset;
+
+    return NSMakeRect(xPosition,
+                      yPosition,
                       kDualNotationCheckboxWidth,
                       kDualNotationCheckboxHeight);
 }
@@ -120,6 +124,14 @@ static const CGFloat kDualNotationCheckboxHeight = 18.0;  // Standard checkbox h
                            toObject:[NSUserDefaultsController sharedUserDefaultsController]
                         withKeyPath:@"values.default.showDualNotation"
                             options:nil];
+}
+
+- (void)configureAutoresizingMask
+{
+    // NSViewMaxXMargin: flexible space on the right side -> keeps checkbox aligned to left edge
+    // NSViewMaxYMargin: flexible space above -> keeps checkbox at bottom
+    // This matches the behavior of the radio buttons defined in the nib
+    [_showDualNotationCheckbox setAutoresizingMask:NSViewMaxYMargin | NSViewMaxXMargin];
 }
 
 - (void)dealloc
