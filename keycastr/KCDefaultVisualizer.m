@@ -71,8 +71,8 @@ static const CGFloat kKCDefaultBezelPadding = 10.0;
 {
     [super awakeFromNib];
 
-    // Create the dual notation checkbox programmatically
-    _showDualNotationCheckbox = [[NSButton alloc] initWithFrame:NSMakeRect(20, 20, 300, 25)];
+    // Create the dual notation checkbox programmatically below the display mode options
+    _showDualNotationCheckbox = [[NSButton alloc] initWithFrame:NSMakeRect(161, 275, 250, 18)];
     [_showDualNotationCheckbox setButtonType:NSButtonTypeSwitch];
     [_showDualNotationCheckbox setTitle:NSLocalizedString(@"Show dual notation (macOS + Windows)",
                                                           @"Checkbox label for enabling dual platform notation display")];
@@ -87,8 +87,8 @@ static const CGFloat kKCDefaultBezelPadding = 10.0;
 
     [self addSubview:_showDualNotationCheckbox];
 
-    // Adjust autoresizing mask to keep it at the bottom
-    [_showDualNotationCheckbox setAutoresizingMask:NSViewMaxYMargin | NSViewMaxXMargin];
+    // Set autoresizing mask
+    [_showDualNotationCheckbox setAutoresizingMask:NSViewMaxYMargin | NSViewMinXMargin];
 }
 
 - (void)showDualNotationChanged:(id)sender
