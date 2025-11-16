@@ -68,38 +68,66 @@ static const CGFloat kKCDefaultBezelPadding = 10.0;
 @synthesize commandKeysOnlyButton, allModifiedKeysButton, allKeysButton, showDualNotationCheckbox;
 
 // Layout constants for dual notation checkbox
+// Based on nib file layout: separator box is at y=283
+static const CGFloat kSeparatorLineY = 283.0;
+static const CGFloat kCheckboxBelowSeparatorOffset = 20.0;
 static const CGFloat kDualNotationCheckboxX = 161.0;      // Aligned with radio buttons
-static const CGFloat kDualNotationCheckboxY = 263.0;      // 20px below separator (y=283)
+static const CGFloat kDualNotationCheckboxY = kSeparatorLineY - kCheckboxBelowSeparatorOffset;
 static const CGFloat kDualNotationCheckboxWidth = 250.0;  // Sufficient for label
 static const CGFloat kDualNotationCheckboxHeight = 18.0;  // Standard checkbox height
 
 - (void)awakeFromNib
 {
     [super awakeFromNib];
+    [self setupDualNotationCheckbox];
+}
 
+#pragma mark - Dual Notation Checkbox Setup
+
+- (void)setupDualNotationCheckbox
+{
     // Create the dual notation checkbox programmatically
     // Note: This is created programmatically because updating the nib file requires Xcode/Interface Builder
-    _showDualNotationCheckbox = [[NSButton alloc] initWithFrame:NSMakeRect(
-        kDualNotationCheckboxX,
-        kDualNotationCheckboxY,
-        kDualNotationCheckboxWidth,
-        kDualNotationCheckboxHeight
-    )];
-    [_showDualNotationCheckbox setButtonType:NSButtonTypeSwitch];
-    [_showDualNotationCheckbox setTitle:NSLocalizedString(@"Show dual notation (macOS + Windows)",
-                                                          @"Checkbox label for enabling dual platform notation display")];
-
-    // Bind to UserDefaults - no action method needed as binding handles updates automatically
-    [_showDualNotationCheckbox bind:NSValueBinding
-                           toObject:[NSUserDefaultsController sharedUserDefaultsController]
-                        withKeyPath:@"values.default.showDualNotation"
-                            options:nil];
-
+    _showDualNotationCheckbox = [[NSButton alloc] initWithFrame:[self dualNotationCheckboxFrame]];
+    [self configureDualNotationCheckbox];
+    [self bindDualNotationCheckbox];
     [self addSubview:_showDualNotationCheckbox];
 
     // Use NSViewMinXMargin (not NSViewMaxXMargin) to keep checkbox aligned to left edge
     // when window is resized, matching the behavior of other radio buttons in the nib
     [_showDualNotationCheckbox setAutoresizingMask:NSViewMaxYMargin | NSViewMinXMargin];
+}
+
+- (NSRect)dualNotationCheckboxFrame
+{
+    return NSMakeRect(kDualNotationCheckboxX,
+                      kDualNotationCheckboxY,
+                      kDualNotationCheckboxWidth,
+                      kDualNotationCheckboxHeight);
+}
+
+- (void)configureDualNotationCheckbox
+{
+    [_showDualNotationCheckbox setButtonType:NSButtonTypeSwitch];
+    [_showDualNotationCheckbox setTitle:NSLocalizedString(@"Show dual notation (macOS + Windows)",
+                                                          @"Checkbox label for enabling dual platform notation display")];
+}
+
+- (void)bindDualNotationCheckbox
+{
+    // Bind to UserDefaults - no action method needed as binding handles updates automatically
+    [_showDualNotationCheckbox bind:NSValueBinding
+                           toObject:[NSUserDefaultsController sharedUserDefaultsController]
+                        withKeyPath:@"values.default.showDualNotation"
+                            options:nil];
+}
+
+- (void)dealloc
+{
+    // Clean up binding to prevent memory leaks and unexpected behavior
+    if (_showDualNotationCheckbox) {
+        [_showDualNotationCheckbox unbind:NSValueBinding];
+    }
 }
 
 @end

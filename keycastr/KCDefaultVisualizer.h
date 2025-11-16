@@ -96,6 +96,10 @@ typedef NS_ENUM(NSInteger, KCDefaultVisualizerDisplayOption) {
 @property (nonatomic, assign) IBOutlet NSButton *commandKeysOnlyButton;
 @property (nonatomic, assign) IBOutlet NSButton *allModifiedKeysButton;
 @property (nonatomic, assign) IBOutlet NSButton *allKeysButton;
+
+// Note: This property is 'strong' (not 'assign') because it's created programmatically
+// in code rather than loaded from the nib file. The view needs to retain it until
+// it's added to the view hierarchy.
 @property (nonatomic, strong) NSButton *showDualNotationCheckbox;
 
 @end
