@@ -360,7 +360,7 @@ static const uint16_t kKeyCodeTab = 48;
             @125: @"Down",         // down arrow
             @124: @"Right",        // right arrow
             @123: @"Left",         // left arrow
-            @kKeyCodeTab: @"Tab",  // tab
+            @(kKeyCodeTab): @"Tab",  // tab
             @53: @"Esc",           // escape
             @71: @"Clear",         // clear
             @51: @"Backspace",     // delete
@@ -370,8 +370,8 @@ static const uint16_t kKeyCodeTab = 48;
             @119: @"End",          // end
             @116: @"PgUp",         // page up
             @121: @"PgDn",         // page down
-            @kKeyCodeReturn: @"Enter",       // return
-            @kKeyCodeNumpadEnter: @"Enter",  // numpad enter
+            @(kKeyCodeReturn): @"Enter",       // return
+            @(kKeyCodeNumpadEnter): @"Enter",  // numpad enter
             @49: @"Space",         // space
             @122: @"F1",           // F1
             @120: @"F2",           // F2

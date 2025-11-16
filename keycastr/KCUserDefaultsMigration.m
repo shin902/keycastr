@@ -43,7 +43,18 @@
 
             // If the color can be unarchived by the deprecated unarchiver,
             // we need to convert it.
-            NSColor *color = [NSUnarchiver unarchiveObjectWithData:colorData];
+            NSError *error = nil;
+            NSColor *color = [NSKeyedUnarchiver unarchivedObjectOfClass:[NSColor class]
+                                                               fromData:colorData
+                                                                  error:&error];
+            if (!color) {
+                // Try legacy unarchiver for old data format
+                #pragma clang diagnostic push
+                #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+                color = [NSUnarchiver unarchiveObjectWithData:colorData];
+                #pragma clang diagnostic pop
+            }
+
             if (color) {
                 NSData *newColorData = [NSKeyedArchiver archivedDataWithRootObject:color
                                                              requiringSecureCoding:NO
