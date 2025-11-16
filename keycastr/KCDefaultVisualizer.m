@@ -67,19 +67,29 @@ static const CGFloat kKCDefaultBezelPadding = 10.0;
 
 @synthesize commandKeysOnlyButton, allModifiedKeysButton, allKeysButton, showDualNotationCheckbox;
 
+// Layout constants for dual notation checkbox
+static const CGFloat kDualNotationCheckboxX = 161.0;      // Aligned with radio buttons
+static const CGFloat kDualNotationCheckboxY = 263.0;      // 20px below separator (y=283)
+static const CGFloat kDualNotationCheckboxWidth = 250.0;  // Sufficient for label
+static const CGFloat kDualNotationCheckboxHeight = 18.0;  // Standard checkbox height
+
 - (void)awakeFromNib
 {
     [super awakeFromNib];
 
-    // Create the dual notation checkbox programmatically below the display mode options
-    _showDualNotationCheckbox = [[NSButton alloc] initWithFrame:NSMakeRect(161, 275, 250, 18)];
+    // Create the dual notation checkbox programmatically
+    // Note: This is created programmatically because updating the nib file requires Xcode/Interface Builder
+    _showDualNotationCheckbox = [[NSButton alloc] initWithFrame:NSMakeRect(
+        kDualNotationCheckboxX,
+        kDualNotationCheckboxY,
+        kDualNotationCheckboxWidth,
+        kDualNotationCheckboxHeight
+    )];
     [_showDualNotationCheckbox setButtonType:NSButtonTypeSwitch];
     [_showDualNotationCheckbox setTitle:NSLocalizedString(@"Show dual notation (macOS + Windows)",
                                                           @"Checkbox label for enabling dual platform notation display")];
-    [_showDualNotationCheckbox setTarget:self];
-    [_showDualNotationCheckbox setAction:@selector(showDualNotationChanged:)];
 
-    // Bind to UserDefaults
+    // Bind to UserDefaults - no action method needed as binding handles updates automatically
     [_showDualNotationCheckbox bind:NSValueBinding
                            toObject:[NSUserDefaultsController sharedUserDefaultsController]
                         withKeyPath:@"values.default.showDualNotation"
@@ -87,14 +97,9 @@ static const CGFloat kKCDefaultBezelPadding = 10.0;
 
     [self addSubview:_showDualNotationCheckbox];
 
-    // Set autoresizing mask
+    // Use NSViewMinXMargin (not NSViewMaxXMargin) to keep checkbox aligned to left edge
+    // when window is resized, matching the behavior of other radio buttons in the nib
     [_showDualNotationCheckbox setAutoresizingMask:NSViewMaxYMargin | NSViewMinXMargin];
-}
-
-- (void)showDualNotationChanged:(id)sender
-{
-    // The binding automatically updates UserDefaults
-    // This method can be used for additional actions if needed
 }
 
 @end
