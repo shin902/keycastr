@@ -168,7 +168,10 @@ static NSString *kKCMouseVisualizerDisplayOptionKey = @"mouse.displayOption";
     [self setBackgroundColor:[NSColor clearColor]];
     [self setAlphaValue:1];
 
-    [self setCollectionBehavior:NSWindowCollectionBehaviorCanJoinAllSpaces];
+    // Mark as transient overlay that shouldn't be managed by tiling window managers
+    [self setCollectionBehavior:NSWindowCollectionBehaviorCanJoinAllSpaces |
+                                 NSWindowCollectionBehaviorTransient |
+                                 NSWindowCollectionBehaviorIgnoresCycle];
 
     // TODO: this should be its own color config.
     [[NSUserDefaultsController sharedUserDefaultsController] addObserver:self forKeyPath:@"values.default.bezelColor" options:NSKeyValueObservingOptionNew context:NULL];
