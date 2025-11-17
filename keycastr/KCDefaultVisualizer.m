@@ -329,7 +329,10 @@ static NSRect KC_defaultFrame(void) {
     [self setAlphaValue:1];
 
     [self setMovableByWindowBackground:YES];
-    [self setCollectionBehavior:NSWindowCollectionBehaviorCanJoinAllSpaces];
+    // Mark as transient overlay that shouldn't be managed by tiling window managers
+    [self setCollectionBehavior:NSWindowCollectionBehaviorCanJoinAllSpaces |
+                                 NSWindowCollectionBehaviorTransient |
+                                 NSWindowCollectionBehaviorIgnoresCycle];
 
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(applicationWillTerminate:)

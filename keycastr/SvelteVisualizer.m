@@ -202,7 +202,10 @@
     [_visualizerWindow setFrameAutosaveName:@"svelte visualizerFrame"];
     [_visualizerWindow setFrameUsingName:@"svelte visualizerFrame"];
     [_visualizerWindow setOpaque:NO];
-    [_visualizerWindow setCollectionBehavior:NSWindowCollectionBehaviorCanJoinAllSpaces];
+    // Mark as transient overlay that shouldn't be managed by tiling window managers
+    [_visualizerWindow setCollectionBehavior:NSWindowCollectionBehaviorCanJoinAllSpaces |
+                                             NSWindowCollectionBehaviorTransient |
+                                             NSWindowCollectionBehaviorIgnoresCycle];
     
     _visualizerView = [[SvelteVisualizerView alloc] initWithFrame:r];
     [_visualizerWindow setContentView:_visualizerView];
